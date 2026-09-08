@@ -1,12 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1">
+
   <title>Scanner Resi</title>
 
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script
+    src="https://unpkg.com/html5-qrcode"
+    type="text/javascript">
+  </script>
 
   <style>
+
     body {
       margin: 0;
       background: #f2f2f2;
@@ -59,7 +67,9 @@
     .info {
       color: #777;
     }
+
   </style>
+
 </head>
 
 <body>
@@ -70,8 +80,12 @@
 
   <div id="reader"></div>
 
-  <div id="hasil" class="info">
+  <div
+    id="hasil"
+    class="info">
+
     SIAP SCAN
+
   </div>
 
   <div id="resi">
@@ -80,138 +94,304 @@
 
 </div>
 
-<!-- Iframe tersembunyi untuk mengirim data ke Apps Script -->
+
+<!-- Iframe tersembunyi -->
 <iframe
   name="kirimFrame"
   id="kirimFrame"
   style="display:none;">
 </iframe>
 
+
 <script>
 
 const API =
 "https://script.google.com/macros/s/AKfycbwwZxv51oYAUrK_6ulhxsZ13GiVgFFrYs3b9KEuUmbDDFa2GJ2vZCPkfeL31bHEvzNL/exec";
 
+
 let sedangKirim = false;
+
+let resiTerakhir = "";
+
+
+// ======================================
+// TAMPILKAN STATUS
+// ======================================
 
 function tampil(status, resi) {
 
-  const hasil = document.getElementById("hasil");
-  const nomor = document.getElementById("resi");
+  const hasil =
+    document.getElementById("hasil");
 
-  hasil.textContent = status;
-  nomor.textContent = resi || "-";
+  const nomor =
+    document.getElementById("resi");
+
+
+  hasil.textContent =
+    status;
+
+
+  nomor.textContent =
+    resi || "-";
+
 
   if (status === "SIAP KIRIM") {
-    hasil.className = "siap";
-  } else if (status === "BATAL") {
-    hasil.className = "batal";
-  } else {
-    hasil.className = "info";
+
+    hasil.className =
+      "siap";
+
   }
+
+  else if (status === "BATAL") {
+
+    hasil.className =
+      "batal";
+
+  }
+
+  else {
+
+    hasil.className =
+      "info";
+
+  }
+
 }
 
+
+// ======================================
+// KIRIM RESI
+// ======================================
 
 function kirimResi(resi) {
 
   if (sedangKirim) return;
 
-  sedangKirim = true;
 
   resi = String(resi || "")
     .trim()
     .toUpperCase();
 
-  if (!resi) {
-    sedangKirim = false;
+
+  if (!resi) return;
+
+
+  // ==================================
+  // CEGAH BARCODE YANG SAMA
+  // TERBACA BERULANG KALI
+  // ==================================
+
+  if (resi === resiTerakhir) {
+
     return;
+
   }
 
-  // Tampilkan dulu nomor yang berhasil dibaca
-  document.getElementById("resi").textContent = resi;
 
-  document.getElementById("hasil").textContent =
+  sedangKirim = true;
+
+  resiTerakhir = resi;
+
+
+  // ==================================
+  // TAMPILKAN LANGSUNG
+  // ==================================
+
+  document.getElementById(
+    "resi"
+  ).textContent = resi;
+
+
+  document.getElementById(
+    "hasil"
+  ).textContent =
     "MEMPROSES...";
 
-  document.getElementById("hasil").className = "info";
+
+  document.getElementById(
+    "hasil"
+  ).className =
+    "info";
 
 
-  // Buat form GET ke Apps Script
-  const form = document.createElement("form");
+  // ==================================
+  // FORM GET
+  // ==================================
 
-  form.method = "GET";
-  form.action = API;
-  form.target = "kirimFrame";
-  form.style.display = "none";
+  const form =
+    document.createElement("form");
 
-  const apiInput = document.createElement("input");
-  apiInput.name = "api";
-  apiInput.value = "scan";
 
-  const resiInput = document.createElement("input");
-  resiInput.name = "resi";
-  resiInput.value = resi;
+  form.method =
+    "GET";
 
-  form.appendChild(apiInput);
-  form.appendChild(resiInput);
 
-  document.body.appendChild(form);
+  form.action =
+    API;
+
+
+  form.target =
+    "kirimFrame";
+
+
+  form.style.display =
+    "none";
+
+
+  const apiInput =
+    document.createElement("input");
+
+
+  apiInput.name =
+    "api";
+
+
+  apiInput.value =
+    "scan";
+
+
+  const resiInput =
+    document.createElement("input");
+
+
+  resiInput.name =
+    "resi";
+
+
+  resiInput.value =
+    resi;
+
+
+  form.appendChild(
+    apiInput
+  );
+
+
+  form.appendChild(
+    resiInput
+  );
+
+
+  document.body.appendChild(
+    form
+  );
+
+
+  // ==================================
+  // KIRIM LANGSUNG
+  // ==================================
 
   form.submit();
+
 
   form.remove();
 
 
-  // Scanner siap membaca lagi setelah jeda
+  // ==================================
+  // JANGAN TUNGGU 700ms
+  // CUKUP 250ms
+  // ==================================
+
   setTimeout(function() {
 
     sedangKirim = false;
 
-    tampil("TERKIRIM", resi);
+    tampil(
+      "TERKIRIM",
+      resi
+    );
 
-    setTimeout(function() {
-      tampil("SIAP SCAN", "-");
-    }, 1200);
+  }, 250);
 
-  }, 700);
+
+  // ==================================
+  // IZINKAN RESI BARU
+  // ==================================
+
+  setTimeout(function() {
+
+    resiTerakhir = "";
+
+    tampil(
+      "SIAP SCAN",
+      "-"
+    );
+
+  }, 900);
+
 }
 
+
+// ======================================
+// SCAN BERHASIL
+// ======================================
 
 function onScanSuccess(decodedText) {
 
-  const resi = String(decodedText || "").trim();
+  const resi =
+    String(decodedText || "")
+      .trim();
+
 
   if (!resi) return;
 
+
   if (sedangKirim) return;
 
+
   kirimResi(resi);
+
 }
 
+
+// ======================================
+// SCAN GAGAL
+// ======================================
 
 function onScanFailure(error) {
-  // Abaikan error saat kamera sedang mencari barcode
+
+  // Abaikan
+  // kamera tetap mencari barcode
+
 }
 
 
-const scanner = new Html5QrcodeScanner(
-  "reader",
-  {
-    fps: 10,
+// ======================================
+// SCANNER
+// ======================================
 
-    qrbox: {
-      width: 280,
-      height: 160
+const scanner =
+  new Html5QrcodeScanner(
+
+    "reader",
+
+    {
+
+      fps: 15,
+
+      qrbox: {
+
+        width: 300,
+
+        height: 170
+
+      },
+
+      rememberLastUsedCamera:
+        true,
+
+      supportedScanTypes: [
+
+        Html5QrcodeScanType
+          .SCAN_TYPE_CAMERA
+
+      ]
+
     },
 
-    rememberLastUsedCamera: true,
+    false
 
-    supportedScanTypes: [
-      Html5QrcodeScanType.SCAN_TYPE_CAMERA
-    ]
-  },
-  false
-);
+  );
 
 
 scanner.render(
@@ -222,4 +402,5 @@ scanner.render(
 </script>
 
 </body>
+
 </html>
